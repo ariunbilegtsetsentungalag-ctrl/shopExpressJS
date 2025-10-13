@@ -23,8 +23,8 @@
 
 1. Clone the repository
 ```bash
-git clone [your-repo-url]
-cd myapp-09-25
+git clone https://github.com/ariunbilegtsetsentungalag-ctrl/shopExpressJS.git
+cd shopExpressJS
 ```
 
 2. Install dependencies
