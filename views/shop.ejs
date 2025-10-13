@@ -1,0 +1,383 @@
+<%- include('include/header') %>
+
+<!-- Page Hero Section -->
+<div class="row mb-5">
+  <div class="col-12">
+    <div class="bg-gradient-primary text-white rounded-custom p-5 text-center shadow-custom fade-in-up">
+      <h1 class="display-4 fw-bold mb-3">
+        <i class="fas fa-store me-3"></i><%- __('welcome') %>
+      </h1>
+      <p class="lead mb-0 opacity-90"><%- __('discover_products') %></p>
+    </div>
+  </div>
+</div>
+
+<!-- Products Section / Filters -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end align-items-start gap-3 mb-3">
+      <div>
+        <h2 class="text-gradient mb-1 d-flex align-items-center">
+          <i class="fas fa-shopping-bag me-2"></i><%- __('shop') %>
+        </h2>
+        <p class="text-muted mb-0">Search, filter and explore our catalog</p>
+      </div>
+      <form method="GET" action="/shop" class="w-100 w-lg-auto">
+        <div class="row g-2">
+          <div class="col-md-5 col-sm-6">
+            <input type="text" name="q" value="<%= typeof currentSearch !== 'undefined' ? currentSearch : '' %>" class="form-control" placeholder="<%- __('search_products') %>" maxlength="100" aria-label="<%- __('search_products') %>">
+          </div>
+          <div class="col-md-4 col-sm-4">
+            <select name="category" class="form-select" aria-label="Filter by category">
+              <option value="All" <%= (currentCategory === 'All') ? 'selected' : '' %>><%- __('all_categories') %></option>
+              <% ['Clothing','Shoes','Accessories','Home & Living','Electronics','Sports','Other'].forEach(cat => { %>
+                <option value="<%= cat %>" <%= (currentCategory === cat) ? 'selected' : '' %>><%= cat %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-3 col-sm-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-search me-1"></i><%- __('search') %></button>
+            <a href="/shop" class="btn btn-outline-secondary" title="Reset filters" aria-label="Reset filters"><i class="fas fa-undo"></i></a>
+          </div>
+        </div>
+      </form>
+    </div>
+    <% if (currentSearch || (currentCategory && currentCategory !== 'All')) { %>
+      <div class="mb-2 small text-muted">
+        <i class="fas fa-filter me-1"></i>
+        Showing results
+        <% if (currentSearch) { %> for "<strong><%= currentSearch %></strong>"<% } %>
+        <% if (currentCategory && currentCategory !== 'All') { %> in category <strong><%= currentCategory %></strong><% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Products Grid -->
+<div id="productsContainer" class="row">
+  <% if (products && products.length > 0) { %>
+    <% products.forEach((product, index) => { %>
+      <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-item fade-in-up" style="animation-delay: <%= index * 0.1 %>s">
+        <a href="/product/<%= product._id %>" class="text-decoration-none">
+          <div class="card product-card h-100 <%= (product.stockQuantity <= 0) ? 'out-of-stock' : '' %>">
+            <!-- Product Image -->
+            <div class="position-relative overflow-hidden">
+              <img src="/images/<%= product.image %>" class="card-img-top" alt="<%= product.name %>">
+
+              <!-- Stock Badge -->
+              <% if (product.stockQuantity <= 0) { %>
+                <div class="position-absolute top-0 end-0 m-3">
+                  <span class="badge bg-danger">Out of Stock</span>
+                </div>
+              <% } else if (product.stockQuantity <= 5) { %>
+                <div class="position-absolute top-0 end-0 m-3">
+                  <span class="badge bg-warning text-dark">Only <%= product.stockQuantity %> left</span>
+                </div>
+              <% } else { %>
+                <div class="position-absolute top-0 end-0 m-3">
+                  <span class="badge bg-success"><%= product.stockQuantity %> in stock</span>
+                </div>
+              <% } %>
+            </div>
+
+            <!-- Product Details -->
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title mb-2 text-truncate text-dark" title="<%= product.name %>">
+                <%= product.name %>
+              </h5>
+
+              <p class="card-text text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                <%= product.description %>
+              </p>
+
+              <!-- Price -->
+              <div class="mb-2">
+                <span class="h5 text-primary fw-bold mb-0">
+                  $<%= product.basePrice ? product.basePrice.toFixed(2) : product.price.toFixed(2) %>
+                </span>
+              </div>
+
+              <!-- Delivery Time -->
+              <div class="mb-2">
+                <small class="text-muted d-flex align-items-center">
+                  <i class="fas fa-truck me-1"></i>
+                  <%- __('delivery') %>: <%= product.deliveryTime || 14 %> <%- __('days') %>
+                </small>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <div class="col-12">
+      <div class="text-center py-5">
+        <div class="mb-4">
+          <i class="fas fa-box-open fa-4x text-muted"></i>
+        </div>
+        <h3 class="text-muted mb-3">No Products Available</h3>
+        <p class="text-muted">Check back later for new arrivals!</p>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<!-- Additional Styles and JavaScript -->
+<style>
+  .product-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: var(--primary-light);
+  }
+  
+  .product-card.out-of-stock {
+    opacity: 0.7;
+  }
+  
+  .product-card.out-of-stock .card-img-top {
+    filter: grayscale(50%);
+  }
+  
+  .card-img-top {
+    height: 250px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .product-card:hover .card-img-top {
+    transform: scale(1.05);
+  }
+
+  a.text-decoration-none {
+    color: inherit;
+  }
+
+  a.text-decoration-none:hover {
+    color: inherit;
+  }
+  
+  /* Animation delays for staggered effect */
+  .fade-in-up {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+</style>
+
+<script>
+// Infinite scroll with lazy loading - Only load when scrolling
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    const categorySelect = document.querySelector('select[name="category"]');
+    const productsContainer = document.getElementById('productsContainer');
+    const resultsInfo = document.querySelector('.mb-2.small.text-muted');
+
+    let currentPage = <%= currentPage || 1 %>;
+    let totalPages = <%= totalPages || 1 %>;
+    let isLoading = false;
+    let searchTimeout;
+    let currentQuery = '<%= currentSearch || "" %>';
+    let currentCategory = '<%= currentCategory || "All" %>';
+
+    // Infinite scroll observer
+    const loadMoreObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !isLoading && currentPage < totalPages) {
+                loadMoreProducts();
+            }
+        });
+    }, {
+        rootMargin: '100px' // Load before user reaches bottom
+    });
+
+    // Create and observe sentinel element
+    function createSentinel() {
+        const existingSentinel = document.getElementById('scroll-sentinel');
+        if (existingSentinel) existingSentinel.remove();
+
+        if (currentPage < totalPages) {
+            const sentinel = document.createElement('div');
+            sentinel.id = 'scroll-sentinel';
+            sentinel.className = 'col-12 text-center py-3';
+            sentinel.innerHTML = '<i class="fas fa-spinner fa-spin text-muted"></i>';
+            productsContainer.appendChild(sentinel);
+            loadMoreObserver.observe(sentinel);
+        }
+    }
+
+    async function loadMoreProducts() {
+        if (isLoading || currentPage >= totalPages) return;
+
+        isLoading = true;
+        currentPage++;
+
+        const params = new URLSearchParams();
+        params.append('page', currentPage);
+        if (currentQuery) params.append('q', currentQuery);
+        if (currentCategory && currentCategory !== 'All') params.append('category', currentCategory);
+
+        try {
+            const response = await fetch(`/api/products/search?${params.toString()}`);
+            const data = await response.json();
+
+            if (data.success && data.products.length > 0) {
+                appendProducts(data.products);
+                totalPages = data.totalPages;
+                createSentinel();
+            }
+        } catch (error) {
+            console.error('Load more error:', error);
+            currentPage--; // Revert on error
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    async function searchProducts() {
+        const query = searchInput.value.trim();
+        const category = categorySelect.value;
+
+        currentQuery = query;
+        currentCategory = category;
+        currentPage = 1;
+
+        const params = new URLSearchParams();
+        params.append('page', 1);
+        if (query) params.append('q', query);
+        if (category && category !== 'All') params.append('category', category);
+
+        try {
+            isLoading = true;
+            productsContainer.style.opacity = '0.6';
+
+            const response = await fetch(`/api/products/search?${params.toString()}`);
+            const data = await response.json();
+
+            if (data.success) {
+                renderProducts(data.products);
+                totalPages = data.totalPages;
+                updateResultsInfo(query, category, data.totalProducts);
+                createSentinel();
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            isLoading = false;
+            productsContainer.style.opacity = '1';
+        }
+    }
+
+    function appendProducts(products) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = products.map((product) => createProductHTML(product)).join('');
+
+        while (tempDiv.firstChild) {
+            productsContainer.insertBefore(tempDiv.firstChild, document.getElementById('scroll-sentinel'));
+        }
+    }
+
+    function renderProducts(products) {
+        if (products.length === 0) {
+            productsContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-search fa-4x text-muted"></i>
+                        </div>
+                        <h3 class="text-muted mb-3">No Products Found</h3>
+                        <p class="text-muted">Try adjusting your search or filter criteria.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        productsContainer.innerHTML = products.map((product) => createProductHTML(product)).join('');
+    }
+
+    function createProductHTML(product) {
+        return `
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-item">
+                <a href="/product/${product._id}" class="text-decoration-none">
+                    <div class="card product-card h-100 ${(product.stockQuantity <= 0) ? 'out-of-stock' : ''}">
+                        <div class="position-relative overflow-hidden">
+                            <img src="/images/${product.image}" class="card-img-top" alt="${product.name}" loading="lazy">
+
+                            ${product.stockQuantity <= 0 ? `
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-danger">Out of Stock</span>
+                                </div>
+                            ` : product.stockQuantity <= 5 ? `
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-warning text-dark">Only ${product.stockQuantity} left</span>
+                                </div>
+                            ` : `
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-success">${product.stockQuantity} in stock</span>
+                                </div>
+                            `}
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-2 text-truncate text-dark" title="${product.name}">
+                                ${product.name}
+                            </h5>
+
+                            <p class="card-text text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                ${product.description}
+                            </p>
+
+                            <div class="mb-2">
+                                <span class="h5 text-primary fw-bold mb-0">
+                                    $${(product.basePrice || product.price).toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-truck me-1"></i>
+                                    Delivery: ${product.deliveryTime || 14} days
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        `;
+    }
+
+    function updateResultsInfo(query, category, count) {
+        if (!resultsInfo) return;
+
+        if (query || (category && category !== 'All')) {
+            let text = `<i class="fas fa-filter me-1"></i>Showing ${count} result${count !== 1 ? 's' : ''}`;
+            if (query) text += ` for "<strong>${query}</strong>"`;
+            if (category && category !== 'All') text += ` in category <strong>${category}</strong>`;
+            resultsInfo.innerHTML = text;
+            resultsInfo.style.display = 'block';
+        } else {
+            resultsInfo.style.display = 'none';
+        }
+    }
+
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => func(...args), wait);
+        };
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', debounce(searchProducts, 300));
+    categorySelect.addEventListener('change', searchProducts);
+
+    // Initialize sentinel for initial page load
+    createSentinel();
+});
+</script>
+
+<%- include('include/footer') %>

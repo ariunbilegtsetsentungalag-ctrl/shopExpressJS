@@ -1,0 +1,164 @@
+<%- include('include/header') %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Profile Header -->
+      <div class="card shadow-lg border-0 mb-4">
+        <div class="card-body p-5">
+          <div class="d-flex align-items-center">
+            <div class="bg-gradient-primary text-white rounded-circle d-flex align-items-center justify-content-center me-4" style="width: 80px; height: 80px;">
+              <i class="fas fa-user fa-2x"></i>
+            </div>
+            <div>
+              <h2 class="text-gradient mb-2"><%- __('my_profile') %></h2>
+              <p class="text-muted mb-0"><%- __('manage_profile_info') %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Completion Alert -->
+      <% if (!user.profileCompleted) { %>
+      <div class="alert alert-warning shadow-lg border-0 mb-4" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+          <div>
+            <h6 class="alert-heading mb-1"><%- __('complete_your_profile') || 'Complete Your Profile' %></h6>
+            <p class="mb-0 small"><%- __('profile_required_message') || 'Please fill in all required fields marked with * to start shopping' %></p>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Profile Form -->
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-edit me-2"></i><%- __('edit_profile') %>
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted mb-4">
+            <i class="fas fa-info-circle me-1"></i>
+            Fields marked with <span class="text-danger">*</span> are required for shopping
+          </p>
+          <form method="POST" action="/profile<%= typeof redirect !== 'undefined' && redirect ? '?redirect=' + encodeURIComponent(redirect) : '' %>">
+            <!-- Personal Information -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-primary fw-bold mb-3">
+                  <i class="fas fa-user me-2"></i><%- __('personal_information') %>
+                </h6>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="firstName" class="form-label"><%- __('first_name') %> <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="firstName" name="firstName"
+                       value="<%= user.firstName || '' %>" placeholder="<%- __('enter_first_name') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="lastName" class="form-label"><%- __('last_name') %> <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="lastName" name="lastName"
+                       value="<%= user.lastName || '' %>" placeholder="<%- __('enter_last_name') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="email" class="form-label"><%- __('email') %></label>
+                <input type="email" class="form-control" id="email" name="email"
+                       value="<%= user.email %>" required placeholder="<%- __('enter_email') %>" readonly>
+                <small class="text-muted">Email cannot be changed</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="phone" class="form-label"><%- __('phone') %> <span class="text-danger">*</span></label>
+                <input type="tel" class="form-control" id="phone" name="phone"
+                       value="<%= user.phone || '' %>" placeholder="<%- __('enter_phone') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="dateOfBirth" class="form-label"><%- __('date_of_birth') %></label>
+                <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" 
+                       value="<%= user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : '' %>">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="gender" class="form-label"><%- __('gender') %></label>
+                <select class="form-control" id="gender" name="gender">
+                  <option value=""><%- __('select_gender') %></option>
+                  <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>><%- __('male') %></option>
+                  <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>><%- __('female') %></option>
+                  <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>><%- __('other') %></option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-primary fw-bold mb-3">
+                  <i class="fas fa-map-marker-alt me-2"></i><%- __('address_information') %>
+                </h6>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="cityAimag" class="form-label"><%- __('city_aimag') %> <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="cityAimag" name="cityAimag"
+                       value="<%= user.address && user.address.cityAimag ? user.address.cityAimag : '' %>"
+                       placeholder="<%- __('enter_city_aimag') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="duuregSum" class="form-label"><%- __('duureg_sum') %> <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="duuregSum" name="duuregSum"
+                       value="<%= user.address && user.address.duuregSum ? user.address.duuregSum : '' %>"
+                       placeholder="<%- __('enter_duureg_sum') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="horooBag" class="form-label"><%- __('horoo_bag') %> <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="horooBag" name="horooBag"
+                       value="<%= user.address && user.address.horooBag ? user.address.horooBag : '' %>"
+                       placeholder="<%- __('enter_horoo_bag') %>" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="detailedInfo" class="form-label"><%- __('detailed_info') %></label>
+                <textarea class="form-control" id="detailedInfo" name="detailedInfo" rows="3"
+                          placeholder="<%- __('enter_detailed_info') %>"><%= user.address && user.address.detailedInfo ? user.address.detailedInfo : '' %></textarea>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+              <div class="col-12">
+                <div class="d-flex gap-3 justify-content-end">
+                  <a href="/shop" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i><%- __('cancel') %>
+                  </a>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i><%- __('save_changes') %>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Account Information -->
+      <div class="card shadow-lg border-0 mt-4">
+        <div class="card-header bg-light">
+          <h6 class="mb-0 text-muted">
+            <i class="fas fa-info-circle me-2"></i><%- __('account_information') %>
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <small class="text-muted d-block"><%- __('username') %></small>
+              <strong><%= user.username %></strong>
+            </div>
+            <div class="col-md-6">
+              <small class="text-muted d-block"><%- __('member_since') %></small>
+              <strong><%= user.createdAt ? user.createdAt.toLocaleDateString() : 'N/A' %></strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('include/footer') %>

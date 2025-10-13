@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= title || 'Simple Shop - Modern E-commerce' %></title>
+  <meta name="description" content="<%- __('modern_ecommerce') %>">
+  
+  <!-- Stylesheets -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/main.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <style>
+    .navbar { 
+      position: sticky; 
+      top: 0; 
+      z-index: 1020; 
+      backdrop-filter: blur(10px);
+      padding: 16px 0;
+    }
+    
+    .navbar-nav {
+      gap: 12px;
+    }
+    
+    .navbar-nav .nav-item {
+      margin: 0 4px;
+    }
+    
+    .navbar-brand {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-right: auto !important;
+      margin-left: 0 !important;
+      padding-left: 0 !important;
+      order: -1;
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .navbar-toggler {
+      margin-left: auto !important;
+      position: relative;
+      z-index: 999;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 991.98px) {
+      .navbar-brand {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        transform: none !important;
+        margin-right: auto !important;
+      }
+      
+      .container {
+        padding-left: 15px !important;
+      }
+    }
+    
+    .nav-link.active {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border-radius: 12px;
+      color: var(--white) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    .admin-link {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+      color: #1f2937 !important;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 12px 20px !important;
+      transition: all 0.3s ease;
+      font-size: 1.05rem;
+      border: 1px solid rgba(251, 191, 36, 0.3) !important;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+    }
+    
+    .admin-link:hover {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+      border-color: rgba(245, 158, 11, 0.5) !important;
+    }
+    
+    .user-welcome {
+      background: none !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      font-weight: 500;
+      font-size: 1rem;
+      border: none !important;
+      margin-left: 15px !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .btn-outline-light {
+      padding: 10px 18px !important;
+      font-weight: 600;
+      border-radius: 10px;
+      font-size: 1rem;
+      border-width: 2px;
+    }
+    
+    .btn-light {
+      padding: 10px 18px !important;
+      font-weight: 600;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    
+    /* Ensure dropdown menus appear above other content */
+    .dropdown-menu {
+      z-index: 9999 !important;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Loading Screen Styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    .loading-text {
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .loading-subtext {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Hide main content initially */
+    .main-content {
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+    
+    .main-content.loaded {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text"><%- __('loading') || 'Loading' %>...</div>
+  <div class="loading-subtext"><%- __('please_wait') || 'Please wait while we prepare your content' %></div>
+</div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark" style="position: relative;">
+  <div class="container d-flex justify-content-between align-items-center">
+    <a class="navbar-brand" href="/">
+      <i class="fas fa-store me-2"></i>Simple Shop
+    </a>
+    <button class="navbar-toggler border-0 ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <% if (locals.userId) { %>
+        <ul class="navbar-nav mx-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/shop">
+              <i class="fas fa-shopping-bag me-1"></i><%- __('shop') %>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cart">
+              <i class="fas fa-shopping-cart me-1"></i><%- __('cart') %>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/order-history">
+              <i class="fas fa-history me-1"></i><%- __('orders') %>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/my-spending">
+              <i class="fas fa-chart-pie me-1"></i><%- __('analytics') %>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/profile">
+              <i class="fas fa-user-edit me-1"></i><%- __('profile') %>
+            </a>
+          </li>
+          <% if (locals.user && (locals.user.role === 'admin' || locals.user.role === 'product_manager')) { %>
+            <li class="nav-item">
+              <a class="nav-link admin-link" href="/admin">
+                <i class="fas fa-cog me-1"></i><%- __('admin_panel') %>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+        
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <!-- Language Switcher -->
+          <div class="d-flex gap-1">
+            <a href="/lang/en" class="btn btn-sm <%= (typeof currentLocale !== 'undefined' && currentLocale === 'en') || typeof currentLocale === 'undefined' ? 'btn-primary' : 'btn-outline-light' %>" title="English">EN</a>
+            <a href="/lang/mn" class="btn btn-sm <%= (typeof currentLocale !== 'undefined' && currentLocale === 'mn') ? 'btn-primary' : 'btn-outline-light' %>" title="Mongolian">MN</a>
+          </div>
+          <button id="theme-toggle" class="btn btn-outline-light" type="button" title="Toggle theme" style="padding: 10px 12px !important; border-radius: 10px;">
+            <i class="fas fa-moon" id="theme-icon"></i>
+          </button>
+          <a href="/logout" class="btn btn-outline-light">
+            <i class="fas fa-sign-out-alt me-1"></i><%- __('logout') %>
+          </a>
+        </div>
+      <% } else { %>
+        <div class="ms-auto d-flex gap-2 align-items-center">
+          <!-- Language Switcher -->
+          <div class="d-flex gap-1">
+            <a href="/lang/en" class="btn btn-sm <%= (typeof currentLocale !== 'undefined' && currentLocale === 'en') || typeof currentLocale === 'undefined' ? 'btn-primary' : 'btn-outline-light' %>" title="English">EN</a>
+            <a href="/lang/mn" class="btn btn-sm <%= (typeof currentLocale !== 'undefined' && currentLocale === 'mn') ? 'btn-primary' : 'btn-outline-light' %>" title="Mongolian">MN</a>
+          </div>
+          <button id="theme-toggle" class="btn btn-outline-light me-2" type="button" title="Toggle theme" style="padding: 10px 12px !important; border-radius: 10px;">
+            <i class="fas fa-moon" id="theme-icon"></i>
+          </button>
+          <a href="/login" class="btn btn-outline-light">
+            <i class="fas fa-sign-in-alt me-1"></i><%- __('login') %>
+          </a>
+          <a href="/signup" class="btn btn-light">
+            <i class="fas fa-user-plus me-1"></i><%- __('signup') %>
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Content Container -->
+<main class="main-content">
+  <div class="container py-4">
+    <!-- Flash Messages -->
+    <% if (locals.error && Array.isArray(locals.error) && locals.error.length > 0) { %>
+      <div class="row mb-4">
+        <div class="col-12">
+          <% locals.error.forEach(function(msg) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <%= msg %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+    
+    <% if (locals.success && Array.isArray(locals.success) && locals.success.length > 0) { %>
+      <div class="row mb-4">
+        <div class="col-12">
+          <% locals.success.forEach(function(msg) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="fas fa-check-circle me-2"></i>
+              <%= msg %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+<!-- Load Bootstrap JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Loading Screen JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const mainContent = document.querySelector('.main-content');
+  
+  // Function to hide loading screen
+  function hideLoadingScreen() {
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+      }, 500);
+    }
+    if (mainContent) {
+      mainContent.classList.add('loaded');
+    }
+  }
+  
+  // Hide loading screen when page is fully loaded
+  if (document.readyState === 'complete') {
+    setTimeout(hideLoadingScreen, 800); // Small delay for better UX
+  } else {
+    window.addEventListener('load', function() {
+      setTimeout(hideLoadingScreen, 800);
+    });
+  }
+  
+  // Show loading screen on navigation (language switching, etc.)
+  const navLinks = document.querySelectorAll('a[href^="/lang/"], .nav-link, .navbar-brand');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      // Don't show loading for external links or hash links
+      const href = this.getAttribute('href');
+      if (href && href.startsWith('/') && !href.startsWith('/#')) {
+        showLoadingScreen();
+      }
+    });
+  });
+  
+  function showLoadingScreen() {
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'flex';
+      loadingOverlay.classList.remove('hidden');
+    }
+    if (mainContent) {
+      mainContent.classList.remove('loaded');
+    }
+  }
+
+  // Mobile menu toggle functionality
+  const navbarToggler = document.querySelector('.navbar-toggler');
+  const navbarCollapse = document.querySelector('#navbarContent');
+  
+  if (navbarToggler && navbarCollapse) {
+    navbarToggler.addEventListener('click', function() {
+      // Toggle the collapse state
+      const isExpanded = navbarToggler.getAttribute('aria-expanded') === 'true';
+      
+      if (isExpanded) {
+        // Close the menu
+        navbarCollapse.classList.remove('show');
+        navbarToggler.setAttribute('aria-expanded', 'false');
+        navbarToggler.classList.add('collapsed');
+      } else {
+        // Open the menu
+        navbarCollapse.classList.add('show');
+        navbarToggler.setAttribute('aria-expanded', 'true');
+        navbarToggler.classList.remove('collapsed');
+      }
+    });
+
+    // Close menu when clicking on a nav link (mobile)
+    const navLinks = document.querySelectorAll('#navbarContent .nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        // Close mobile menu after clicking a link
+        if (window.innerWidth < 992) { // Only on mobile/tablet
+          navbarCollapse.classList.remove('show');
+          navbarToggler.setAttribute('aria-expanded', 'false');
+          navbarToggler.classList.add('collapsed');
+        }
+      });
+    });
+  }
+});
+</script>
+

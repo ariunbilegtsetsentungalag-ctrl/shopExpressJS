@@ -1,0 +1,398 @@
+<%- include('include/header') %>
+
+<!-- Page Header -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex align-items-center gap-3">
+      <div class="bg-gradient-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+        <i class="fas fa-history fa-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-gradient mb-1"><%- __('order_history') %></h1>
+        <p class="text-muted mb-0"><%- __('track_purchases') %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (!orders || orders.length === 0) { %>
+  <!-- Empty State -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-custom rounded-custom">
+        <div class="card-body text-center py-5">
+          <div class="mb-4">
+            <i class="fas fa-receipt fa-4x text-muted opacity-50"></i>
+          </div>
+          <h3 class="text-muted mb-3"><%- __('no_orders') %></h3>
+          <p class="text-muted mb-4"><%- __('no_orders_message') %></p>
+          <a href="/shop" class="btn btn-primary btn-lg">
+            <i class="fas fa-store me-2"></i><%- __('start_shopping') %>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } else { %>
+  <!-- Orders Summary -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-gradient-primary text-white">
+        <div class="card-body text-center">
+          <i class="fas fa-shopping-bag fa-2x mb-2"></i>
+          <h4><%= orders.length %></h4>
+          <p class="mb-0"><%- __('total_orders') %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-gradient-success text-white">
+        <div class="card-body text-center">
+          <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+          <h4>$<%= orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2) %></h4>
+          <p class="mb-0"><%- __('total_spent') %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-gradient-secondary text-white">
+        <div class="card-body text-center">
+          <i class="fas fa-calculator fa-2x mb-2"></i>
+          <h4>$<%= (orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length).toFixed(2) %></h4>
+          <p class="mb-0"><%- __('average_order') %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders List -->
+  <div class="row">
+    <% orders.forEach((order, index) => { %>
+      <div class="col-12 mb-4">
+        <div class="card shadow-custom rounded-custom fade-in-up" style="animation-delay: <%= index * 0.1 %>s">
+          <!-- Order Header -->
+          <div class="card-header bg-gradient-primary text-white">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <h5 class="mb-1">
+                  <i class="fas fa-receipt me-2"></i><%- __('order_number') %><%= order._id.toString().slice(-8).toUpperCase() %>
+                </h5>
+                <small class="opacity-75">
+                  <i class="fas fa-calendar me-1"></i>
+                  <%= new Date(order.orderDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) %>
+                </small>
+              </div>
+              <div class="col-md-6 text-end">
+                <div class="h4 mb-1">$<%= order.totalAmount.toFixed(2) %></div>
+                <% 
+                  const status = order.deliveryStatus || 'Processing';
+                  let badgeClass, icon;
+                  switch(status) {
+                    case 'Processing':
+                      badgeClass = 'bg-warning';
+                      icon = 'fas fa-cog fa-spin';
+                      break;
+                    case 'Shipped':
+                      badgeClass = 'bg-info';
+                      icon = 'fas fa-shipping-fast';
+                      break;
+                    case 'Delivering':
+                      badgeClass = 'bg-primary';
+                      icon = 'fas fa-truck';
+                      break;
+                    case 'Delivered':
+                      badgeClass = 'bg-success';
+                      icon = 'fas fa-check-circle';
+                      break;
+                    default:
+                      badgeClass = 'bg-secondary';
+                      icon = 'fas fa-question';
+                  }
+                %>
+                <div class="badge <%= badgeClass %>">
+                  <i class="<%= icon %> me-1"></i><%= status %>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Order Items -->
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-borderless">
+                <thead class="table-light">
+                  <tr>
+                    <th><%- __('product') %></th>
+                    <th class="text-center"><%- __('quantity') %></th>
+                    <th class="text-end"><%- __('unit_price') %></th>
+                    <th class="text-end"><%- __('total') %></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% order.products.forEach(item => { %>
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-box text-muted me-2"></i>
+                          <span class="fw-medium"><%= item.name %></span>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge bg-light text-dark"><%= item.quantity %></span>
+                      </td>
+                      <td class="text-end">$<%= item.price.toFixed(2) %></td>
+                      <td class="text-end fw-bold text-primary">
+                        $<%= (item.price * item.quantity).toFixed(2) %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="text-end fw-bold"><%- __('order_total') %>:</td>
+                    <td class="text-end fw-bold h5 text-primary">
+                      $<%= order.totalAmount.toFixed(2) %>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Delivery Information -->
+          <% if (order.deliveryStatus) { %>
+          <div class="card-body border-top delivery-info-section" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h6 class="mb-2 text-primary">
+                  <i class="fas fa-truck me-2"></i><%- __('delivery_information') %>
+                </h6>
+                <div class="row">
+                  <div class="col-sm-6">
+                    <small class="text-muted d-block"><%- __('status') %>:</small>
+                    <strong class="text-dark"><%= order.deliveryStatus || 'Processing' %></strong>
+                  </div>
+                  <div class="col-sm-6">
+                    <small class="text-muted d-block">
+                      <% if (order.deliveryStatus === 'Delivered') { %>
+                        <%- __('delivered_on') %>:
+                      <% } else { %>
+                        <%- __('estimated_delivery') %>:
+                      <% } %>
+                    </small>
+                    <strong class="text-dark">
+                      <% 
+                        let deliveryDate;
+                        if (order.estimatedDeliveryDate) {
+                          deliveryDate = new Date(order.estimatedDeliveryDate);
+                        } else {
+                          // If no delivery date set, calculate 14 days from order date
+                          deliveryDate = new Date(order.orderDate);
+                          deliveryDate.setDate(deliveryDate.getDate() + 14);
+                        }
+                      %>
+                      <%= deliveryDate.toLocaleDateString('en-US', { 
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) %>
+                    </strong>
+                  </div>
+                </div>
+                <% if (order.trackingNumber) { %>
+                <div class="mt-2">
+                  <small class="text-muted d-block">Tracking Number:</small>
+                  <code class="text-primary"><%= order.trackingNumber %></code>
+                </div>
+                <% } %>
+                
+                <!-- Delivery Days -->
+                <% if (order.deliveryStatus !== 'Delivered') { %>
+                <div class="mt-2">
+                  <small class="text-muted d-block">Delivery Time:</small>
+                  <strong class="text-primary">
+                    <% 
+                      const today = new Date();
+                      let deliveryDate;
+                      if (order.estimatedDeliveryDate) {
+                        deliveryDate = new Date(order.estimatedDeliveryDate);
+                      } else {
+                        // Calculate 14 days from order date if no delivery date set
+                        deliveryDate = new Date(order.orderDate);
+                        deliveryDate.setDate(deliveryDate.getDate() + 14);
+                      }
+                      const daysRemaining = Math.ceil((deliveryDate - today) / (1000 * 60 * 60 * 24));
+                      
+                      if (daysRemaining > 0) {
+                    %>
+                      <%= daysRemaining %> days remaining
+                    <% } else if (daysRemaining === 0) { %>
+                      Today!
+                    <% } else { %>
+                      Expected soon
+                    <% } %>
+                  </strong>
+                </div>
+                <% } %>
+              </div>
+              <div class="col-md-4 text-end">
+                <% if (order.deliveryStatus === 'Delivered') { %>
+                  <div class="text-success">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <div class="small fw-bold">Successfully Delivered!</div>
+                  </div>
+                <% } else if (order.deliveryStatus === 'Delivering') { %>
+                  <div class="text-primary delivery-pulse">
+                    <i class="fas fa-truck fa-2x mb-2"></i>
+                    <div class="small fw-bold">Out for Delivery!</div>
+                  </div>
+                <% } else if (order.deliveryStatus === 'Shipped') { %>
+                  <div class="text-info">
+                    <i class="fas fa-shipping-fast fa-2x mb-2"></i>
+                    <div class="small fw-bold">In Transit</div>
+                  </div>
+                <% } else { %>
+                  <div class="text-warning">
+                    <i class="fas fa-cog fa-spin fa-2x mb-2"></i>
+                    <div class="small fw-bold">Preparing Order</div>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Order Actions -->
+          <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="text-muted small">
+                <i class="fas fa-box me-1"></i>
+                <%= order.products.length %> item(s) • 
+                <i class="fas fa-clock me-1"></i>
+                <%= Math.ceil((new Date() - new Date(order.orderDate)) / (1000 * 60 * 60 * 24)) %> days ago
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                  <i class="fas fa-print me-1"></i>Print Receipt
+                </button>
+                <a href="/shop" class="btn btn-primary btn-sm">
+                  <i class="fas fa-redo me-1"></i><%- __('reorder_items') %>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+  
+  <!-- Pagination -->
+  <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+    <div class="row">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <div class="text-muted">
+            Page <%= currentPage %> of <%= totalPages %> (Total: <%= totalOrders %> orders)
+          </div>
+          <nav aria-label="Order pagination">
+            <ul class="pagination mb-0">
+              <% if (currentPage > 1) { %>
+                <li class="page-item">
+                  <a class="page-link" href="/order-history?page=<%= currentPage - 1 %>">
+                    <i class="fas fa-chevron-left"></i> Previous
+                  </a>
+                </li>
+              <% } %>
+
+              <%
+                const startPage = Math.max(1, currentPage - 2);
+                const endPage = Math.min(totalPages, currentPage + 2);
+
+                if (startPage > 1) { %>
+                  <li class="page-item"><a class="page-link" href="/order-history?page=1">1</a></li>
+                  <% if (startPage > 2) { %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% } %>
+                <% } %>
+
+                <% for (let i = startPage; i <= endPage; i++) { %>
+                  <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="/order-history?page=<%= i %>"><%= i %></a>
+                  </li>
+                <% } %>
+
+                <% if (endPage < totalPages) {
+                  if (endPage < totalPages - 1) { %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% } %>
+                  <li class="page-item"><a class="page-link" href="/order-history?page=<%= totalPages %>"><%= totalPages %></a></li>
+                <% } %>
+
+              <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                  <a class="page-link" href="/order-history?page=<%= currentPage + 1 %>">
+                    Next <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+              <% } %>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  <% } %>
+<% } %>
+
+<style>
+  .bg-gradient-success {
+    background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%) !important;
+  }
+  
+  .table-borderless td,
+  .table-borderless th {
+    border: none;
+    padding: 0.75rem 1rem;
+  }
+  
+  .table-light th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+  }
+  
+  @media print {
+    .card-footer,
+    .btn,
+    nav,
+    footer {
+      display: none !important;
+    }
+  }
+  
+  /* Delivery Status Animations */
+  .delivery-pulse {
+    animation: delivery-pulse 2s infinite;
+  }
+  
+  @keyframes delivery-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  .delivery-info-section {
+    border-left: 4px solid #3b82f6;
+    border-radius: 8px;
+  }
+</style>
+
+
+<%- include('include/footer') %>

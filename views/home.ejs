@@ -1,0 +1,24 @@
+<%- include('include/header') %>
+<div class="container py-4">
+  <div class="row">
+    <div class="col-md-12">
+      <h1>Welcome to Simple Shop</h1>
+      <p>Browse featured products</p>
+    </div>
+  </div>
+  <div class="row mt-3">
+    <% products.slice(0,4).forEach(p => { %>
+      <div class="col-md-3">
+        <div class="card mb-3">
+          <img src="/images/<%= p.image %>" class="card-img-top">
+          <div class="card-body">
+            <h5><%= p.name %></h5>
+            <p>$<%= p.price %></p>
+            <a href="/product/<%= p.id %>" class="btn btn-primary btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('include/footer') %>

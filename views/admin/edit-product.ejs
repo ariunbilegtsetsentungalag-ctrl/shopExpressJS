@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - MyApp Admin</title>
+    <link rel="stylesheet" href="/main.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 60px; }
+        .main-navbar { position: fixed; top: 0; z-index: 1001; }
+        .admin-sidebar {
+            background: #2c3e50;
+            color: white;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .admin-sidebar a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-radius: 5px;
+            margin: 5px 15px;
+            transition: all 0.3s ease;
+        }
+        .admin-sidebar a:hover,
+        .admin-sidebar a.active {
+            background: #3498db;
+            color: white;
+        }
+        .admin-header {
+            background: #34495e;
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        .form-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .current-images {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand navbar-dark bg-dark main-navbar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/shop">Simple Shop</a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="/shop"><i class="fas fa-store"></i> View Shop</a>
+                <a class="nav-link" href="/cart"><i class="fas fa-shopping-bag"></i> My Bag</a>
+                <a class="nav-link text-warning" href="/admin"><i class="fas fa-tools"></i> Admin Panel</a>
+            </div>
+            <div class="d-flex">
+                <span class="navbar-text me-3">Welcome, <%= locals.username || 'Admin' %></span>
+                <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 admin-sidebar">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-tools"></i> Admin Panel
+                </h4>
+                <a href="/admin">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="/admin/products" class="active">
+                    <i class="fas fa-box"></i> Manage Products
+                </a>
+                <a href="/admin/add-product">
+                    <i class="fas fa-plus"></i> Add Product
+                </a>
+                <a href="/admin/users">
+                    <i class="fas fa-users"></i> Manage Users
+                </a>
+                <a href="/admin/income-analytics">
+                    <i class="fas fa-chart-line"></i> Income Analytics
+                </a>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="admin-header">
+                    <h2><i class="fas fa-edit"></i> Edit Product</h2>
+                    <p class="mb-0">Update product: <%= product.name %></p>
+                </div>
+
+                <div class="form-section">
+                    <form method="POST" action="/admin/products/<%= product._id %>" enctype="multipart/form-data">
+                        <!-- Basic Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Product Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" value="<%= product.name %>" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="basePrice" class="form-label">Base Price *</label>
+                                <input type="number" step="0.01" class="form-control" id="basePrice" name="basePrice" value="<%= product.basePrice %>" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="stockQuantity" class="form-label">Stock Quantity *</label>
+                                <input type="number" class="form-control" id="stockQuantity" name="stockQuantity" value="<%= product.stockQuantity || 0 %>" min="0" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="deliveryTime" class="form-label">Delivery Time (days)</label>
+                                <input type="number" class="form-control" id="deliveryTime" name="deliveryTime" value="<%= product.deliveryTime || 14 %>" min="1" max="365">
+                                <small class="form-text text-muted">Number of days for delivery</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Clothing" <%= product.category === 'Clothing' ? 'selected' : '' %>>Clothing</option>
+                                    <option value="Shoes" <%= product.category === 'Shoes' ? 'selected' : '' %>>Shoes</option>
+                                    <option value="Accessories" <%= product.category === 'Accessories' ? 'selected' : '' %>>Accessories</option>
+                                    <option value="Home & Living" <%= product.category === 'Home & Living' ? 'selected' : '' %>>Home & Living</option>
+                                    <option value="Electronics" <%= product.category === 'Electronics' ? 'selected' : '' %>>Electronics</option>
+                                    <option value="Sports" <%= product.category === 'Sports' ? 'selected' : '' %>>Sports</option>
+                                    <option value="Other" <%= product.category === 'Other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="images" class="form-label">Add New Images</label>
+                                <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
+                                <div class="form-text">Current images will be kept. Add new ones here.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required><%= product.description %></textarea>
+                        </div>
+
+                        <!-- Current Images -->
+                        <% if (product.images && product.images.length > 0) { %>
+                        <div class="current-images">
+                            <label class="form-label"><i class="fas fa-images"></i> Current Images:</label>
+                            <div class="row">
+                                <% product.images.forEach(image => { %>
+                                    <div class="col-md-2 mb-2">
+                                        <img src="/images/<%= image %>" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">
+                                    </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                        <% } %>
+
+                        <!-- Features -->
+                        <div class="mb-3">
+                            <label for="features" class="form-label">Features (one per line)</label>
+                            <textarea class="form-control" id="features" name="features" rows="4"><%= product.features ? product.features.join('\n') : '' %></textarea>
+                        </div>
+
+                        <!-- Sizes -->
+                        <div class="mb-3">
+                            <label class="form-label">Sizes & Prices</label>
+                            <div id="sizesContainer">
+                                <% if (product.sizes && product.sizes.length > 0) { %>
+                                    <% product.sizes.forEach((size, index) => { %>
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <input type="text" class="form-control" placeholder="Size name" value="<%= size.name %>" data-size-name="<%= index %>">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="number" step="0.01" class="form-control" placeholder="Price" value="<%= size.price %>" data-size-price="<%= index %>">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-danger" onclick="removeSize(this)">Remove</button>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } %>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addSize()">Add Size</button>
+                        </div>
+
+                        <!-- Colors -->
+                        <div class="mb-3">
+                            <label class="form-label">Colors</label>
+                            <div id="colorsContainer">
+                                <% if (product.colors && product.colors.length > 0) { %>
+                                    <% product.colors.forEach((color, index) => { %>
+                                        <div class="row mb-2">
+                                            <div class="col-md-3">
+                                                <input type="text" class="form-control" placeholder="Color name" value="<%= color.name %>" data-color-name="<%= index %>">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="color" class="form-control form-control-color" value="<%= color.code %>" data-color-code="<%= index %>">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="text" class="form-control" placeholder="Image filename" value="<%= color.image || '' %>" data-color-image="<%= index %>">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <button type="button" class="btn btn-danger" onclick="removeColor(this)">Remove</button>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } %>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="addColor()">Add Color</button>
+                        </div>
+
+                        <!-- Hidden fields for sizes and colors -->
+                        <input type="hidden" id="sizesJson" name="sizes" value="">
+                        <input type="hidden" id="colorsJson" name="colors" value="">
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/admin/products" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Same JavaScript functions as add-product.ejs
+function addSize() {
+    const container = document.getElementById('sizesContainer');
+    const existingSizes = container.querySelectorAll('.row').length;
+    const div = document.createElement('div');
+    div.className = 'row mb-2';
+    div.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="Size name" data-size-name="${existingSizes}">
+        </div>
+        <div class="col-md-4">
+            <input type="number" step="0.01" class="form-control" placeholder="Price" data-size-price="${existingSizes}">
+        </div>
+        <div class="col-md-4">
+            <button type="button" class="btn btn-danger" onclick="removeSize(this)">Remove</button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function removeSize(btn) {
+    btn.closest('.row').remove();
+}
+
+function addColor() {
+    const container = document.getElementById('colorsContainer');
+    const existingColors = container.querySelectorAll('.row').length;
+    const div = document.createElement('div');
+    div.className = 'row mb-2';
+    div.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control" placeholder="Color name" data-color-name="${existingColors}">
+        </div>
+        <div class="col-md-3">
+            <input type="color" class="form-control form-control-color" data-color-code="${existingColors}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control" placeholder="Image filename" data-color-image="${existingColors}">
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-danger" onclick="removeColor(this)">Remove</button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function removeColor(btn) {
+    btn.closest('.row').remove();
+}
+
+// Form submission handler
+document.querySelector('form').addEventListener('submit', function(e) {
+    // Collect sizes
+    const sizes = [];
+    document.querySelectorAll('[data-size-name]').forEach((nameInput, index) => {
+        const priceInput = document.querySelector(`[data-size-price="${index}"]`) || 
+                          document.querySelectorAll('[data-size-price]')[index];
+        if (nameInput.value && priceInput && priceInput.value) {
+            sizes.push({
+                name: nameInput.value,
+                price: parseFloat(priceInput.value)
+            });
+        }
+    });
+    document.getElementById('sizesJson').value = JSON.stringify(sizes);
+
+    // Collect colors
+    const colors = [];
+    document.querySelectorAll('[data-color-name]').forEach((nameInput, index) => {
+        const codeInput = document.querySelector(`[data-color-code="${index}"]`) || 
+                         document.querySelectorAll('[data-color-code]')[index];
+        const imageInput = document.querySelector(`[data-color-image="${index}"]`) || 
+                          document.querySelectorAll('[data-color-image]')[index];
+        if (nameInput.value && codeInput && codeInput.value) {
+            colors.push({
+                name: nameInput.value,
+                code: codeInput.value,
+                image: imageInput ? imageInput.value : ''
+            });
+        }
+    });
+    document.getElementById('colorsJson').value = JSON.stringify(colors);
+});
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
