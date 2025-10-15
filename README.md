@@ -1,7 +1,5 @@
 # E-commerce Web Application
 
-A full-stack e-commerce application built with Node.js, Express, MongoDB, and EJS templates.
-
 ## Features
 
 - 🔐 User authentication (signup/login)
@@ -22,21 +20,16 @@ A full-stack e-commerce application built with Node.js, Express, MongoDB, and EJ
 
 ## Getting Started
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB Atlas account
-
-### Installation
 
 1. Clone the repository
 ```bash
-git clone [your-repo-url]
-cd myapp-09-25
+git clone https://github.com/ariunbilegtsetsentungalag-ctrl/shopExpressJS.git
+cd shopExpressJS
 ```
 
 2. Install dependencies
 ```bash
-npm install
+npm i
 ```
 
 3. Create a `.env` file in the root directory:
@@ -48,15 +41,8 @@ SESSION_SECRET=your_session_secret
 
 4. Start the application
 ```bash
-npm start
+npm run watch
 ```
 
 5. Visit `http://localhost:9005`
 
-## Deployment
-
-This application is configured for deployment on Vercel. The `vercel.json` file is already included.
-
-## License
-
-MIT License
