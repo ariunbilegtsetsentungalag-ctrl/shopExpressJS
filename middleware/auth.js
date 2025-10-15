@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Profile = require('../models/Profile');
 
 const isAuthenticated = (req, res, next) => {
   if (req.session && req.session.userId) {
@@ -15,15 +16,23 @@ const requireCompleteProfile = async (req, res, next) => {
       return res.redirect('/login');
     }
 
-    const user = await User.findById(req.session.userId);
+    const user = await User.findById(req.session.userId).populate('profile');
 
     if (!user) {
       req.flash('error', 'User not found');
       return res.redirect('/login');
     }
 
-    // Check if profile is complete
-    if (!user.isProfileComplete()) {
+    // Find or create profile if it doesn't exist
+    let profile = user.profile;
+    if (!profile) {
+      profile = await Profile.findOrCreateByUserId(req.session.userId);
+      user.profile = profile._id;
+      await user.save();
+    }
+
+    // Check if profile is complete using the new Profile model
+    if (!profile.completionStatus.isComplete) {
       req.flash('error', 'Please complete your profile before making purchases');
       return res.redirect('/profile?redirect=' + encodeURIComponent(req.originalUrl));
     }

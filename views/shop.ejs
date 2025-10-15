@@ -62,7 +62,7 @@
           <div class="card product-card h-100 <%= (product.stockQuantity <= 0) ? 'out-of-stock' : '' %>">
             <!-- Product Image -->
             <div class="position-relative overflow-hidden">
-              <img src="/images/<%= product.image %>" class="card-img-top" alt="<%= product.name %>">
+              <img src="/images/<%= product.image || 'product1.svg' %>" class="card-img-top" alt="<%= product.name %>" onerror="this.src='/images/product1.svg'">
 
               <!-- Stock Badge -->
               <% if (product.stockQuantity <= 0) { %>
@@ -93,7 +93,7 @@
               <!-- Price -->
               <div class="mb-2">
                 <span class="h5 text-primary fw-bold mb-0">
-                  $<%= product.basePrice ? product.basePrice.toFixed(2) : product.price.toFixed(2) %>
+                  $<%= product.basePrice ? product.basePrice.toFixed(2) : (product.price ? product.price.toFixed(2) : '0.00') %>
                 </span>
               </div>
 
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="/product/${product._id}" class="text-decoration-none">
                     <div class="card product-card h-100 ${(product.stockQuantity <= 0) ? 'out-of-stock' : ''}">
                         <div class="position-relative overflow-hidden">
-                            <img src="/images/${product.image}" class="card-img-top" alt="${product.name}" loading="lazy">
+                            <img src="/images/${product.image || 'product1.svg'}" class="card-img-top" alt="${product.name}" loading="lazy" onerror="this.src='/images/product1.svg'">
 
                             ${product.stockQuantity <= 0 ? `
                                 <div class="position-absolute top-0 end-0 m-3">
@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             <div class="mb-2">
                                 <span class="h5 text-primary fw-bold mb-0">
-                                    $${(product.basePrice || product.price).toFixed(2)}
+                                    $${(product.basePrice || product.price || 0).toFixed(2)}
                                 </span>
                             </div>
 

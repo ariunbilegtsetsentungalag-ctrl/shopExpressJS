@@ -252,14 +252,15 @@
         
         <div class="product-detail-container">
             <div class="product-images">
-                <img src="/images/<%= product.image %>" alt="<%= product.name %>" class="main-image" id="mainImage">
+                <img src="/images/<%= product.image || 'product1.svg' %>" alt="<%= product.name %>" class="main-image" id="mainImage" onerror="this.src='/images/product1.svg'">
                 
                 <% if (product.images && product.images.length > 1) { %>
                 <div class="image-thumbnails">
                     <% product.images.forEach((img, index) => { %>
-                    <img src="/images/<%= img %>" alt="<%= product.name %>" 
-                         class="thumbnail <%= index === 0 ? 'active' : '' %>" 
-                         onclick="changeMainImage('/images/<%= img %>', this)">
+                    <img src="/images/<%= img || 'product1.svg' %>" alt="<%= product.name %>" 
+                         class="thumbnail-image <%= index === 0 ? 'active' : '' %>" 
+                         onclick="changeMainImage('/images/<%= img %>', this)"
+                         onerror="this.src='/images/product1.svg'">
                     <% }); %>
                 </div>
                 <% } %>
@@ -268,7 +269,7 @@
             <div class="product-info">
                 <h1><%= product.name %></h1>
                 <div class="price-display" id="priceDisplay">
-                    $<%= product.basePrice ? product.basePrice.toFixed(2) : product.price.toFixed(2) %>
+                    $<%= product.basePrice ? product.basePrice.toFixed(2) : (product.price ? product.price.toFixed(2) : '0.00') %>
                 </div>
                 
                 <div class="delivery-info mb-3" style="padding: 12px; background-color: var(--bg-secondary); border-radius: 8px; border-left: 4px solid var(--primary-color);">

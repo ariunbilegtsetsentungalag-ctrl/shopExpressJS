@@ -7,8 +7,8 @@
       <div class="card-header bg-gradient-primary text-white text-center border-0 rounded-top-custom">
         <div class="py-3">
           <i class="fas fa-sign-in-alt fa-3x mb-3"></i>
-          <h2 class="mb-1">Welcome Back</h2>
-          <p class="mb-0 opacity-75">Sign in to your account</p>
+          <h2 class="mb-1"><%- __('welcome_back') %></h2>
+          <p class="mb-0 opacity-75"><%- __('sign_in_to_account') %></p>
         </div>
       </div>
       
@@ -17,29 +17,29 @@
         <form action="/login" method="POST" class="needs-validation" novalidate>
           <div class="mb-4">
             <label for="username" class="form-label">
-              <i class="fas fa-user me-2 text-primary"></i>Username
+              <i class="fas fa-user me-2 text-primary"></i><%- __('username') %>
             </label>
             <input type="text" 
                    class="form-control form-control-lg" 
                    id="username" 
                    name="username" 
-                   placeholder="Enter your username"
+                   placeholder="<%- __('enter_username') %>"
                    required>
             <div class="invalid-feedback">
-              Please provide a valid username.
+              <%- __('please_provide_valid_username') %>
             </div>
           </div>
           
           <div class="mb-4">
             <label for="password" class="form-label">
-              <i class="fas fa-lock me-2 text-primary"></i>Password
+              <i class="fas fa-lock me-2 text-primary"></i><%- __('password') %>
             </label>
             <div class="position-relative">
               <input type="password" 
                      class="form-control form-control-lg" 
                      id="password" 
                      name="password" 
-                     placeholder="Enter your password"
+                     placeholder="<%- __('enter_password') %>"
                      required>
               <button type="button" 
                       class="btn btn-link position-absolute end-0 top-50 translate-middle-y"
@@ -48,26 +48,26 @@
               </button>
             </div>
             <div class="invalid-feedback">
-              Please provide a valid password.
+              <%- __('please_provide_valid_password') %>
             </div>
           </div>
           
           <div class="d-grid mb-4">
             <button type="submit" class="btn btn-primary btn-lg">
-              <i class="fas fa-sign-in-alt me-2"></i>Sign In
+              <i class="fas fa-sign-in-alt me-2"></i><%- __('sign_in') %>
             </button>
           </div>
         </form>
         
         <!-- Divider -->
         <div class="text-center mb-4">
-          <span class="text-muted">Don't have an account?</span>
+          <span class="text-muted"><%- __('dont_have_account') %></span>
         </div>
         
         <!-- Sign Up Link -->
         <div class="d-grid">
           <a href="/signup" class="btn btn-outline-primary btn-lg">
-            <i class="fas fa-user-plus me-2"></i>Create Account
+            <i class="fas fa-user-plus me-2"></i><%- __('create_account') %>
           </a>
         </div>
       </div>
@@ -107,6 +107,21 @@
       toggleIcon.classList.add('fa-eye');
     }
   }
+  
+  // Enhanced form styling and interaction
+  document.addEventListener('DOMContentLoaded', function() {
+    // Focus effects for form controls
+    const formControls = document.querySelectorAll('.form-control');
+    formControls.forEach(control => {
+      control.addEventListener('focus', function() {
+        this.parentElement.classList.add('focused');
+      });
+      
+      control.addEventListener('blur', function() {
+        this.parentElement.classList.remove('focused');
+      });
+    });
+  });
   
   // Bootstrap validation
   (function() {

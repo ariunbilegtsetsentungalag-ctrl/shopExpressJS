@@ -1,0 +1,160 @@
+<%- include('../include/header') %>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-bug me-2"></i>Profile Completion Debug
+          </h4>
+        </div>
+        <div class="card-body">
+          <% if (user && profile) { %>
+          
+          <!-- Overall Status -->
+          <div class="alert <%= profile.completionStatus.isComplete ? 'alert-success' : 'alert-warning' %>">
+            <h5 class="alert-heading">
+              <i class="fas fa-<%= profile.completionStatus.isComplete ? 'check-circle' : 'exclamation-triangle' %> me-2"></i>
+              Profile Status: <%= profile.completionStatus.isComplete ? 'COMPLETE' : 'INCOMPLETE' %>
+            </h5>
+            <p class="mb-0">Completion: <%= profile.completionStatus.completionPercentage %>%</p>
+          </div>
+
+          <!-- Personal Info Section -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-user me-2"></i>Personal Information
+                <span class="badge <%= profile.completionStatus.completedSections.personalInfo ? 'bg-success' : 'bg-danger' %> ms-2">
+                  <%= profile.completionStatus.completedSections.personalInfo ? 'Complete' : 'Incomplete' %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <strong>First Name:</strong><br>
+                  "<%= profile.personalInfo.firstName %>"
+                  <span class="badge <%= profile.personalInfo.firstName ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.personalInfo.firstName ? '✓' : '✗' %>
+                  </span>
+                </div>
+                <div class="col-md-4">
+                  <strong>Last Name:</strong><br>
+                  "<%= profile.personalInfo.lastName %>"
+                  <span class="badge <%= profile.personalInfo.lastName ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.personalInfo.lastName ? '✓' : '✗' %>
+                  </span>
+                </div>
+                <div class="col-md-4">
+                  <strong>Phone:</strong><br>
+                  "<%= profile.personalInfo.phone %>"
+                  <span class="badge <%= profile.personalInfo.phone ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.personalInfo.phone ? '✓' : '✗' %>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Section -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                <span class="badge <%= profile.completionStatus.completedSections.address ? 'bg-success' : 'bg-danger' %> ms-2">
+                  <%= profile.completionStatus.completedSections.address ? 'Complete' : 'Incomplete' %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <strong>Aimag:</strong><br>
+                  "<%= profile.address.aimag %>"
+                  <span class="badge <%= profile.address.aimag ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.address.aimag ? '✓' : '✗' %>
+                  </span>
+                </div>
+                <div class="col-md-4">
+                  <strong>District/Sum:</strong><br>
+                  "<%= profile.address.duuregSum %>"
+                  <span class="badge <%= profile.address.duuregSum ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.address.duuregSum ? '✓' : '✗' %>
+                  </span>
+                </div>
+                <div class="col-md-4">
+                  <strong>Horoo:</strong><br>
+                  "<%= profile.address.horoo %>"
+                  <% 
+                  const horooRequired = profile.address.aimag === 'Улаанбаатар хот';
+                  const horooValid = !horooRequired || profile.address.horoo;
+                  %>
+                  <span class="badge <%= horooValid ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= horooValid ? '✓' : '✗' %>
+                  </span>
+                  <% if (!horooRequired) { %>
+                    <small class="text-muted">(Not required for this aimag)</small>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preferences Section -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-cog me-2"></i>Preferences
+                <span class="badge <%= profile.completionStatus.completedSections.preferences ? 'bg-success' : 'bg-danger' %> ms-2">
+                  <%= profile.completionStatus.completedSections.preferences ? 'Complete' : 'Incomplete' %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <strong>Language:</strong><br>
+                  "<%= profile.preferences.language %>"
+                  <span class="badge <%= profile.preferences.language ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.preferences.language ? '✓' : '✗' %>
+                  </span>
+                </div>
+                <div class="col-md-6">
+                  <strong>Currency:</strong><br>
+                  "<%= profile.preferences.currency %>"
+                  <span class="badge <%= profile.preferences.currency ? 'bg-success' : 'bg-danger' %> ms-1">
+                    <%= profile.preferences.currency ? '✓' : '✗' %>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="/profile" class="btn btn-primary">
+              <i class="fas fa-edit me-2"></i>Edit Profile
+            </a>
+            <a href="/cart" class="btn btn-success">
+              <i class="fas fa-shopping-cart me-2"></i>Test Cart Access
+            </a>
+            <button onclick="location.reload()" class="btn btn-outline-secondary">
+              <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+          </div>
+
+          <% } else { %>
+          <div class="alert alert-danger">
+            <h5>No Profile Found</h5>
+            <p>Please <a href="/login">log in</a> to view profile debug information.</p>
+          </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../include/footer') %>

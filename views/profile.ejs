@@ -19,13 +19,18 @@
       </div>
 
       <!-- Profile Completion Alert -->
-      <% if (!user.profileCompleted) { %>
+      <% if (profile && !profile.completionStatus.isComplete) { %>
       <div class="alert alert-warning shadow-lg border-0 mb-4" role="alert">
         <div class="d-flex align-items-center">
           <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
           <div>
             <h6 class="alert-heading mb-1"><%- __('complete_your_profile') || 'Complete Your Profile' %></h6>
-            <p class="mb-0 small"><%- __('profile_required_message') || 'Please fill in all required fields marked with * to start shopping' %></p>
+            <p class="mb-0 small">
+              <%- __('profile_required_message') || 'Please fill in all required fields marked with * to start shopping' %>
+              <% if (profile.completionStatus.completionPercentage > 0) { %>
+                (<%= profile.completionStatus.completionPercentage %>% complete)
+              <% } %>
+            </p>
           </div>
         </div>
       </div>
@@ -54,12 +59,12 @@
               <div class="col-md-6 mb-3">
                 <label for="firstName" class="form-label"><%- __('first_name') %> <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="firstName" name="firstName"
-                       value="<%= user.firstName || '' %>" placeholder="<%- __('enter_first_name') %>" required>
+                       value="<%= profile && profile.personalInfo.firstName || '' %>" placeholder="<%- __('enter_first_name') %>" required>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="lastName" class="form-label"><%- __('last_name') %> <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="lastName" name="lastName"
-                       value="<%= user.lastName || '' %>" placeholder="<%- __('enter_last_name') %>" required>
+                       value="<%= profile && profile.personalInfo.lastName || '' %>" placeholder="<%- __('enter_last_name') %>" required>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="email" class="form-label"><%- __('email') %></label>
@@ -70,20 +75,20 @@
               <div class="col-md-6 mb-3">
                 <label for="phone" class="form-label"><%- __('phone') %> <span class="text-danger">*</span></label>
                 <input type="tel" class="form-control" id="phone" name="phone"
-                       value="<%= user.phone || '' %>" placeholder="<%- __('enter_phone') %>" required>
+                       value="<%= profile && profile.personalInfo.phone || '' %>" placeholder="<%- __('enter_phone') %>" required>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="dateOfBirth" class="form-label"><%- __('date_of_birth') %></label>
                 <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" 
-                       value="<%= user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : '' %>">
+                       value="<%= profile && profile.personalInfo.dateOfBirth ? profile.personalInfo.dateOfBirth.toISOString().split('T')[0] : '' %>">
               </div>
               <div class="col-md-6 mb-3">
                 <label for="gender" class="form-label"><%- __('gender') %></label>
                 <select class="form-control" id="gender" name="gender">
                   <option value=""><%- __('select_gender') %></option>
-                  <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>><%- __('male') %></option>
-                  <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>><%- __('female') %></option>
-                  <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>><%- __('other') %></option>
+                  <option value="male" <%= profile && profile.personalInfo.gender === 'male' ? 'selected' : '' %>><%- __('male') %></option>
+                  <option value="female" <%= profile && profile.personalInfo.gender === 'female' ? 'selected' : '' %>><%- __('female') %></option>
+                  <option value="other" <%= profile && profile.personalInfo.gender === 'other' ? 'selected' : '' %>><%- __('other') %></option>
                 </select>
               </div>
             </div>
@@ -96,27 +101,33 @@
                 </h6>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="cityAimag" class="form-label"><%- __('city_aimag') %> <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="cityAimag" name="cityAimag"
-                       value="<%= user.address && user.address.cityAimag ? user.address.cityAimag : '' %>"
-                       placeholder="<%- __('enter_city_aimag') %>" required>
+                <label for="aimag" class="form-label">Аймаг/Хот <span class="text-danger">*</span></label>
+                <select class="form-control" id="aimag" name="aimag" required>
+                  <option value="">Аймаг/хот сонгоно уу</option>
+                </select>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="duuregSum" class="form-label"><%- __('duureg_sum') %> <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="duuregSum" name="duuregSum"
-                       value="<%= user.address && user.address.duuregSum ? user.address.duuregSum : '' %>"
-                       placeholder="<%- __('enter_duureg_sum') %>" required>
+                <label for="duuregSum" class="form-label"><span id="duuregSumLabel">Дүүрэг/Сум</span> <span class="text-danger">*</span></label>
+                <select class="form-control" id="duuregSum" name="duuregSum" required disabled>
+                  <option value="">Эхлээд аймаг сонгоно уу</option>
+                </select>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="horooBag" class="form-label"><%- __('horoo_bag') %> <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="horooBag" name="horooBag"
-                       value="<%= user.address && user.address.horooBag ? user.address.horooBag : '' %>"
-                       placeholder="<%- __('enter_horoo_bag') %>" required>
+                <label for="horoo" class="form-label"><span id="horooLabel">Хороо</span> <span class="text-danger">*</span></label>
+                <select class="form-control" id="horoo" name="horoo" required disabled>
+                  <option value="">Эхлээд дүүрэг сонгоно уу</option>
+                </select>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="detailedInfo" class="form-label"><%- __('detailed_info') %></label>
-                <textarea class="form-control" id="detailedInfo" name="detailedInfo" rows="3"
-                          placeholder="<%- __('enter_detailed_info') %>"><%= user.address && user.address.detailedInfo ? user.address.detailedInfo : '' %></textarea>
+                <label for="detailedAddress" class="form-label">Дэлгэрэнгүй хаяг</label>
+                <textarea class="form-control" id="detailedAddress" name="detailedAddress" rows="3"
+                          placeholder="Байр, орц, тоот гэх мэт дэлгэрэнгүй мэдээлэл"><%= profile && profile.address && profile.address.detailedAddress ? profile.address.detailedAddress : '' %></textarea>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="zipCode" class="form-label">Шуудангийн индекс</label>
+                <input type="text" class="form-control" id="zipCode" name="zipCode" maxlength="10"
+                       value="<%= profile && profile.address && profile.address.zipCode ? profile.address.zipCode : '' %>"
+                       placeholder="Шуудангийн индекс">
               </div>
             </div>
 
@@ -160,5 +171,180 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aimagSelect = document.getElementById('aimag');
+    const duuregSumSelect = document.getElementById('duuregSum');
+    const horooSelect = document.getElementById('horoo');
+    const duuregSumLabel = document.getElementById('duuregSumLabel');
+    const horooLabel = document.getElementById('horooLabel');
+    
+    // Store current values for initialization
+    const currentAimag = '<%= profile && profile.address && profile.address.aimag ? profile.address.aimag : "" %>';
+    const currentDuuregSum = '<%= profile && profile.address && profile.address.duuregSum ? profile.address.duuregSum : "" %>';
+    const currentHoroo = '<%= profile && profile.address && profile.address.horoo ? profile.address.horoo : "" %>';
+    
+    // Load aimags on page load
+    loadAimags();
+    
+    // Event listeners
+    aimagSelect.addEventListener('change', function() {
+        const selectedAimag = this.value;
+        if (selectedAimag) {
+            loadDistrictsOrSums(selectedAimag);
+            resetHorooSelect();
+        } else {
+            resetDistrictSumSelect();
+            resetHorooSelect();
+        }
+    });
+    
+    duuregSumSelect.addEventListener('change', function() {
+        const selectedAimag = aimagSelect.value;
+        const selectedDistrict = this.value;
+        if (selectedAimag === 'Улаанбаатар хот' && selectedDistrict) {
+            loadHoroos(selectedAimag, selectedDistrict);
+        } else {
+            resetHorooSelect();
+            // For aimags, horoo is not needed, so hide it
+            if (selectedAimag && selectedAimag !== 'Улаанбаатар хот') {
+                horooSelect.parentElement.style.display = 'none';
+                horooSelect.removeAttribute('required');
+            }
+        }
+    });
+    
+    async function loadAimags() {
+        try {
+            const response = await fetch('/api/aimags');
+            const data = await response.json();
+            
+            if (data.success) {
+                aimagSelect.innerHTML = '<option value="">Аймаг/хот сонгоно уу</option>';
+                data.aimags.forEach(aimag => {
+                    const option = document.createElement('option');
+                    option.value = aimag;
+                    option.textContent = aimag;
+                    if (aimag === currentAimag) {
+                        option.selected = true;
+                    }
+                    aimagSelect.appendChild(option);
+                });
+                
+                // If there's a current aimag, load its districts/sums
+                if (currentAimag) {
+                    await loadDistrictsOrSums(currentAimag);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading aimags:', error);
+            showAlert('Аймгийн жагсаалт ачаалахад алдаа гарлаа', 'danger');
+        }
+    }
+    
+    async function loadDistrictsOrSums(aimag) {
+        try {
+            const response = await fetch(`/api/districts-sums/${encodeURIComponent(aimag)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                duuregSumSelect.innerHTML = '';
+                duuregSumSelect.disabled = false;
+                
+                if (data.type === 'districts') {
+                    duuregSumLabel.textContent = 'Дүүрэг';
+                    horooLabel.textContent = 'Хороо';
+                    horooSelect.parentElement.style.display = 'block';
+                    horooSelect.setAttribute('required', 'required');
+                    duuregSumSelect.innerHTML = '<option value="">Дүүрэг сонгоно уу</option>';
+                } else {
+                    duuregSumLabel.textContent = 'Сум';
+                    horooSelect.parentElement.style.display = 'none';
+                    horooSelect.removeAttribute('required');
+                    duuregSumSelect.innerHTML = '<option value="">Сум сонгоно уу</option>';
+                }
+                
+                data.data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item;
+                    if (item === currentDuuregSum) {
+                        option.selected = true;
+                    }
+                    duuregSumSelect.appendChild(option);
+                });
+                
+                // If there's a current district and this is UB, load horoos
+                if (currentDuuregSum && aimag === 'Улаанбаатар хот') {
+                    await loadHoroos(aimag, currentDuuregSum);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading districts/sums:', error);
+            showAlert('Дүүрэг/сумын жагсаалт ачаалахад алдаа гарлаа', 'danger');
+        }
+    }
+    
+    async function loadHoroos(aimag, district) {
+        try {
+            const response = await fetch(`/api/horoos/${encodeURIComponent(aimag)}/${encodeURIComponent(district)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                horooSelect.innerHTML = '<option value="">Хороо сонгоно уу</option>';
+                horooSelect.disabled = false;
+                
+                data.horoos.forEach(horoo => {
+                    const option = document.createElement('option');
+                    option.value = horoo;
+                    option.textContent = horoo;
+                    if (horoo === currentHoroo) {
+                        option.selected = true;
+                    }
+                    horooSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading horoos:', error);
+            showAlert('Хороонуудын жагсаалт ачаалахад алдаа гарлаа', 'danger');
+        }
+    }
+    
+    function resetDistrictSumSelect() {
+        duuregSumSelect.innerHTML = '<option value="">Эхлээд аймаг сонгоно уу</option>';
+        duuregSumSelect.disabled = true;
+        duuregSumLabel.textContent = 'Дүүрэг/Сум';
+    }
+    
+    function resetHorooSelect() {
+        horooSelect.innerHTML = '<option value="">Эхлээд дүүрэг сонгоно уу</option>';
+        horooSelect.disabled = true;
+        horooSelect.parentElement.style.display = 'block';
+        horooSelect.setAttribute('required', 'required');
+    }
+    
+    function showAlert(message, type) {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the form
+        const form = document.querySelector('form');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
 
 <%- include('include/footer') %>

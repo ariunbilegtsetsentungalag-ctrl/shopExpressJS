@@ -1,80 +1,8 @@
-const Order = require('../models/Order');
 const User = require('../models/User');
+const Profile = require('../models/Profile');
 const Product = require('../models/Product');
 const mongoose = require('mongoose');
-
-exports.getUserSpendingAnalytics = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    console.log('Analytics route accessed by user:', userId);
-    
-    if (!userId) {
-      req.flash('error', 'Please log in to view your spending analytics');
-      return res.redirect('/login');
-    }
-
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-
-    // Get all user orders
-    const allOrders = await Order.find({ userId: userObjectId })
-      .sort({ orderDate: -1 })
-      .select('orderDate totalAmount products');
-
-    // Calculate basic statistics
-    const totalSpent = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const totalOrders = allOrders.length;
-    const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-
-    // Get current month data
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const thisMonthStart = new Date(thisYear, thisMonth, 1);
-    const thisMonthEnd = new Date(thisYear, thisMonth + 1, 1);
-
-    const thisMonthOrders = allOrders.filter(order => 
-      order.orderDate >= thisMonthStart && order.orderDate < thisMonthEnd
-    );
-    const thisMonthSpent = thisMonthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    // Calculate monthly spending for chart
-    const monthlyData = new Array(12).fill(0);
-    allOrders.forEach(order => {
-      if (order.orderDate.getFullYear() === thisYear) {
-        const month = order.orderDate.getMonth();
-        monthlyData[month] += order.totalAmount;
-      }
-    });
-
-    const monthlySpending = monthlyData.map((amount, index) => ({
-      _id: index + 1,
-      totalSpent: amount,
-      orderCount: allOrders.filter(order => 
-        order.orderDate.getFullYear() === thisYear && 
-        order.orderDate.getMonth() === index
-      ).length
-    })).filter(month => month.totalSpent > 0);
-
-    console.log('Rendering analytics with data...');
-    res.render('user/analytics', {
-      title: 'My Spending Analytics',
-      username: req.session.username || 'User',
-      totalSpent: totalSpent,
-      totalOrders: totalOrders,
-      averageOrderValue: averageOrderValue,
-      thisMonthSpent: thisMonthSpent,
-      thisMonthOrders: thisMonthOrders.length,
-      recentOrders: allOrders.slice(0, 5),
-      monthlySpending: monthlySpending,
-      yearlySpendingTotal: monthlyData.reduce((sum, amount) => sum + amount, 0)
-    });
-
-  } catch (error) {
-    console.error('User spending analytics error:', error);
-    req.flash('error', 'Error loading your spending analytics');
-    res.redirect('/shop');
-  }
-};
+const mongoliaAddresses = require('../data/mongoliaAddresses');
 
 // Profile controller functions
 exports.getProfile = async (req, res) => {
@@ -86,16 +14,25 @@ exports.getProfile = async (req, res) => {
       return res.redirect('/login');
     }
 
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId).select('-password').populate('profile');
 
     if (!user) {
       req.flash('error', 'User not found');
       return res.redirect('/login');
     }
 
+    // Create profile if it doesn't exist
+    if (!user.profile) {
+      const profile = await Profile.findOrCreateByUserId(userId);
+      user.profile = profile._id;
+      await user.save();
+      await user.populate('profile');
+    }
+
     res.render('profile', {
       title: 'My Profile',
       user: user,
+      profile: user.profile,
       username: req.session.username || user.username,
       redirect: req.query.redirect || null
     });
@@ -104,6 +41,44 @@ exports.getProfile = async (req, res) => {
     console.error('Profile view error:', error);
     req.flash('error', 'Error loading your profile');
     res.redirect('/shop');
+  }
+};
+
+exports.getProfileDebug = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      req.flash('error', 'Please log in to view profile debug');
+      return res.redirect('/login');
+    }
+
+    const user = await User.findById(userId).select('-password').populate('profile');
+
+    if (!user) {
+      req.flash('error', 'User not found');
+      return res.redirect('/login');
+    }
+
+    // Create profile if it doesn't exist
+    if (!user.profile) {
+      const profile = await Profile.findOrCreateByUserId(userId);
+      user.profile = profile._id;
+      await user.save();
+      await user.populate('profile');
+    }
+
+    res.render('profile-debug', {
+      title: 'Profile Debug',
+      user: user,
+      profile: user.profile,
+      username: req.session.username || user.username
+    });
+
+  } catch (error) {
+    console.error('Profile debug error:', error);
+    req.flash('error', 'Error loading profile debug');
+    res.redirect('/profile');
   }
 };
 
@@ -123,55 +98,70 @@ exports.updateProfile = async (req, res) => {
       phone,
       dateOfBirth,
       gender,
-      cityAimag,
+      aimag,
       duuregSum,
-      horooBag,
-      detailedInfo
+      horoo,
+      detailedAddress,
+      zipCode
     } = req.body;
 
-    // Validate required fields for profile completion
-    const requiredFields = {
-      'First Name': firstName,
-      'Last Name': lastName,
-      'Phone': phone,
-      'City/Aimag': cityAimag,
-      'Duureg/Sum': duuregSum,
-      'Horoo/Bag': horooBag
-    };
-
-    const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value || !value.trim())
-      .map(([field, _]) => field);
-
-    if (missingFields.length > 0) {
-      req.flash('error', `Please fill in all required fields: ${missingFields.join(', ')}`);
-      return res.redirect('/profile');
-    }
-
-    // Find user and update
+    // Find user and create/update profile
     const user = await User.findById(userId);
-
     if (!user) {
       req.flash('error', 'User not found');
       return res.redirect('/login');
     }
 
-    // Update user fields
-    user.firstName = firstName.trim();
-    user.lastName = lastName.trim();
-    user.email = email;
-    user.phone = phone.trim();
-    user.dateOfBirth = dateOfBirth || null;
-    user.gender = gender || '';
-    user.address = {
-      cityAimag: cityAimag ? cityAimag.trim() : '',
-      duuregSum: duuregSum ? duuregSum.trim() : '',
-      horooBag: horooBag ? horooBag.trim() : '',
-      detailedInfo: detailedInfo ? detailedInfo.trim() : ''
+    // Find or create profile
+    let profile = await Profile.findOrCreateByUserId(userId);
+
+    // Update user basic info (only email can be updated in User model)
+    if (email && email !== user.email) {
+      user.email = email;
+      await user.save();
+    }
+
+    // Update profile data
+    profile.personalInfo = {
+      firstName: firstName ? firstName.trim() : '',
+      lastName: lastName ? lastName.trim() : '',
+      phone: phone ? phone.trim() : '',
+      dateOfBirth: dateOfBirth || null,
+      gender: gender || '',
+      avatar: profile.personalInfo.avatar || ''
     };
 
-    // Save will trigger the pre-save hook to update profileCompleted
-    await user.save();
+    profile.address = {
+      aimag: aimag ? aimag.trim() : '',
+      duuregSum: duuregSum ? duuregSum.trim() : '',
+      horoo: horoo ? horoo.trim() : '',
+      detailedAddress: detailedAddress ? detailedAddress.trim() : '',
+      zipCode: zipCode ? zipCode.trim() : ''
+    };
+
+    // Ensure preferences have default values for completion check
+    if (!profile.preferences.language) {
+      profile.preferences.language = 'mn';
+    }
+    if (!profile.preferences.currency) {
+      profile.preferences.currency = 'MNT';
+    }
+    if (!profile.preferences.notifications) {
+      profile.preferences.notifications = {
+        email: true,
+        sms: false,
+        promotions: true
+      };
+    }
+
+    // Save profile (will trigger pre-save hooks for completion checking)
+    await profile.save();
+
+    // Link profile to user if not already linked
+    if (!user.profile || user.profile.toString() !== profile._id.toString()) {
+      user.profile = profile._id;
+      await user.save();
+    }
 
     req.flash('success', 'Profile updated successfully!');
 
@@ -193,3 +183,60 @@ exports.updateProfile = async (req, res) => {
     res.redirect('/profile');
   }
 };
+
+// Address API Functions
+exports.getAimags = (req, res) => {
+  try {
+    const aimags = Object.keys(mongoliaAddresses);
+    res.json({ success: true, aimags });
+  } catch (error) {
+    console.error('Get aimags error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching aimags' });
+  }
+};
+
+exports.getDistrictsOrSums = (req, res) => {
+  try {
+    const { aimag } = req.params;
+    
+    if (!mongoliaAddresses[aimag]) {
+      return res.status(404).json({ success: false, message: 'Aimag not found' });
+    }
+    
+    const aimagData = mongoliaAddresses[aimag];
+    
+    if (aimagData.type === 'city') {
+      // For Ulaanbaatar, return districts (duureg)
+      const districts = Object.keys(aimagData.districts);
+      res.json({ success: true, type: 'districts', data: districts });
+    } else {
+      // For other aimags, return sums
+      res.json({ success: true, type: 'sums', data: aimagData.sums });
+    }
+  } catch (error) {
+    console.error('Get districts/sums error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching districts/sums' });
+  }
+};
+
+exports.getHoroos = (req, res) => {
+  try {
+    const { aimag, district } = req.params;
+    
+    if (!mongoliaAddresses[aimag] || mongoliaAddresses[aimag].type !== 'city') {
+      return res.status(404).json({ success: false, message: 'Invalid request for horoos' });
+    }
+    
+    const aimagData = mongoliaAddresses[aimag];
+    
+    if (!aimagData.districts[district]) {
+      return res.status(404).json({ success: false, message: 'District not found' });
+    }
+    
+    const horoos = aimagData.districts[district].horoos;
+    res.json({ success: true, horoos });
+  } catch (error) {
+    console.error('Get horoos error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching horoos' });
+  }
+};;

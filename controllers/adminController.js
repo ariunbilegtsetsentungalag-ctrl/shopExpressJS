@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const PromoCode = require('../models/PromoCode');
+const Category = require('../models/Category');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -477,6 +479,233 @@ exports.getIncomeAnalytics = async (req, res) => {
     console.error('Income analytics error:', error);
     req.flash('error', 'Error loading income analytics');
     res.redirect('/admin');
+  }
+};
+
+// Promo Code Management Functions
+exports.getPromoCodes = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+    
+    const searchQuery = req.query.search ? {
+      $or: [
+        { code: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const promoCodes = await PromoCode.find(searchQuery)
+      .populate('createdBy', 'username')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    const totalPromoCodes = await PromoCode.countDocuments(searchQuery);
+    const totalPages = Math.ceil(totalPromoCodes / limit);
+    
+    const activePromoCodes = await PromoCode.countDocuments({ isActive: true });
+    const expiredPromoCodes = await PromoCode.countDocuments({ 
+      expiryDate: { $lt: new Date() } 
+    });
+    
+    res.render('admin/promo-codes', {
+      title: 'Manage Promo Codes',
+      promoCodes,
+      totalPromoCodes,
+      activePromoCodes,
+      expiredPromoCodes,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      nextPage: page + 1,
+      prevPage: page - 1,
+      searchQuery: req.query.search || ''
+    });
+  } catch (error) {
+    console.error('Get promo codes error:', error);
+    req.flash('error', 'Error loading promo codes');
+    res.redirect('/admin');
+  }
+};
+
+exports.getAddPromoCode = async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    res.render('admin/add-promo-code', {
+      title: 'Add New Promo Code',
+      categories
+    });
+  } catch (error) {
+    console.error('Get add promo code error:', error);
+    req.flash('error', 'Error loading form');
+    res.redirect('/admin/promo-codes');
+  }
+};
+
+exports.createPromoCode = async (req, res) => {
+  try {
+    const {
+      code,
+      description,
+      discountType,
+      discountValue,
+      minimumOrderAmount,
+      maximumDiscountAmount,
+      expiryDate,
+      usageLimit,
+      isActive,
+      applicableCategories,
+      excludedCategories
+    } = req.body;
+    
+    // Check if promo code already exists
+    const existingCode = await PromoCode.findOne({ code: code.toUpperCase() });
+    if (existingCode) {
+      req.flash('error', 'Promo code already exists');
+      return res.redirect('/admin/add-promo-code');
+    }
+    
+    const promoCode = new PromoCode({
+      code: code.toUpperCase(),
+      description,
+      discountType,
+      discountValue: parseFloat(discountValue),
+      minimumOrderAmount: parseFloat(minimumOrderAmount) || 0,
+      maximumDiscountAmount: maximumDiscountAmount ? parseFloat(maximumDiscountAmount) : null,
+      expiryDate: new Date(expiryDate),
+      usageLimit: usageLimit ? parseInt(usageLimit) : null,
+      isActive: isActive === 'on',
+      applicableCategories: applicableCategories || [],
+      excludedCategories: excludedCategories || [],
+      createdBy: req.session.userId
+    });
+    
+    await promoCode.save();
+    req.flash('success', 'Promo code created successfully!');
+    res.redirect('/admin/promo-codes');
+  } catch (error) {
+    console.error('Create promo code error:', error);
+    req.flash('error', 'Error creating promo code: ' + error.message);
+    res.redirect('/admin/add-promo-code');
+  }
+};
+
+exports.getEditPromoCode = async (req, res) => {
+  try {
+    const promoCode = await PromoCode.findById(req.params.id);
+    if (!promoCode) {
+      req.flash('error', 'Promo code not found');
+      return res.redirect('/admin/promo-codes');
+    }
+    
+    const categories = await Category.find().sort({ name: 1 });
+    res.render('admin/edit-promo-code', {
+      title: 'Edit Promo Code',
+      promoCode,
+      categories
+    });
+  } catch (error) {
+    console.error('Get edit promo code error:', error);
+    req.flash('error', 'Error loading promo code');
+    res.redirect('/admin/promo-codes');
+  }
+};
+
+exports.updatePromoCode = async (req, res) => {
+  try {
+    const {
+      code,
+      description,
+      discountType,
+      discountValue,
+      minimumOrderAmount,
+      maximumDiscountAmount,
+      expiryDate,
+      usageLimit,
+      isActive,
+      applicableCategories,
+      excludedCategories
+    } = req.body;
+    
+    const promoCode = await PromoCode.findById(req.params.id);
+    if (!promoCode) {
+      req.flash('error', 'Promo code not found');
+      return res.redirect('/admin/promo-codes');
+    }
+    
+    // Check if code is being changed and if new code already exists
+    if (code.toUpperCase() !== promoCode.code) {
+      const existingCode = await PromoCode.findOne({ 
+        code: code.toUpperCase(),
+        _id: { $ne: promoCode._id }
+      });
+      if (existingCode) {
+        req.flash('error', 'Promo code already exists');
+        return res.redirect(`/admin/promo-codes/edit/${promoCode._id}`);
+      }
+    }
+    
+    promoCode.code = code.toUpperCase();
+    promoCode.description = description;
+    promoCode.discountType = discountType;
+    promoCode.discountValue = parseFloat(discountValue);
+    promoCode.minimumOrderAmount = parseFloat(minimumOrderAmount) || 0;
+    promoCode.maximumDiscountAmount = maximumDiscountAmount ? parseFloat(maximumDiscountAmount) : null;
+    promoCode.expiryDate = new Date(expiryDate);
+    promoCode.usageLimit = usageLimit ? parseInt(usageLimit) : null;
+    promoCode.isActive = isActive === 'on';
+    promoCode.applicableCategories = applicableCategories || [];
+    promoCode.excludedCategories = excludedCategories || [];
+    
+    await promoCode.save();
+    req.flash('success', 'Promo code updated successfully!');
+    res.redirect('/admin/promo-codes');
+  } catch (error) {
+    console.error('Update promo code error:', error);
+    req.flash('error', 'Error updating promo code: ' + error.message);
+    res.redirect(`/admin/promo-codes/edit/${req.params.id}`);
+  }
+};
+
+exports.deletePromoCode = async (req, res) => {
+  try {
+    const promoCode = await PromoCode.findById(req.params.id);
+    if (!promoCode) {
+      req.flash('error', 'Promo code not found');
+      return res.redirect('/admin/promo-codes');
+    }
+    
+    await PromoCode.findByIdAndDelete(req.params.id);
+    req.flash('success', 'Promo code deleted successfully!');
+    res.redirect('/admin/promo-codes');
+  } catch (error) {
+    console.error('Delete promo code error:', error);
+    req.flash('error', 'Error deleting promo code');
+    res.redirect('/admin/promo-codes');
+  }
+};
+
+exports.togglePromoCodeStatus = async (req, res) => {
+  try {
+    const promoCode = await PromoCode.findById(req.params.id);
+    if (!promoCode) {
+      return res.status(404).json({ success: false, message: 'Promo code not found' });
+    }
+    
+    promoCode.isActive = !promoCode.isActive;
+    await promoCode.save();
+    
+    res.json({ 
+      success: true, 
+      message: `Promo code ${promoCode.isActive ? 'activated' : 'deactivated'} successfully`,
+      isActive: promoCode.isActive 
+    });
+  } catch (error) {
+    console.error('Toggle promo code status error:', error);
+    res.status(500).json({ success: false, message: 'Error updating promo code status' });
   }
 };
 

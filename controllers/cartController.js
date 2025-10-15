@@ -1,11 +1,27 @@
 const Order = require('../models/Order')
 const Product = require('../models/Product')
+const PromoCode = require('../models/PromoCode')
 const mongoose = require('mongoose')
 const { asyncHandler } = require('../middleware/errorHandler')
 
 exports.viewCart = (req, res) => {
   const cart = req.session.cart || { items: [] }
-  res.render('cart', { cart, title: 'My Cart' })
+  const appliedPromoCode = req.session.appliedPromoCode || null
+  
+  // Calculate cart total
+  let total = 0
+  if (cart.items && cart.items.length > 0) {
+    total = cart.items.reduce((sum, item) => {
+      return sum + (item.price * item.quantity)
+    }, 0)
+  }
+  
+  res.render('cart', { 
+    cart, 
+    title: 'My Cart',
+    appliedPromoCode,
+    total: total
+  })
 }
 
 exports.addToCart = asyncHandler(async (req, res) => {
@@ -175,11 +191,37 @@ exports.checkout = async (req, res) => {
       }
     }
 
-    const totalAmount = cart.items.reduce((total, item) => 
+    const subtotal = cart.items.reduce((total, item) => 
       total + (item.product.price * item.quantity), 0)
 
     const userObjectId = mongoose.Types.ObjectId.isValid(req.session.userId) ? 
       new mongoose.Types.ObjectId(req.session.userId) : req.session.userId;
+
+    // Handle promo code if applied
+    let discountAmount = 0;
+    let promoCodeData = null;
+    
+    if (req.session.appliedPromoCode) {
+      const promoCode = await PromoCode.findById(req.session.appliedPromoCode.promoCodeId);
+      if (promoCode) {
+        const validation = promoCode.isValid();
+        if (validation.valid) {
+          const discount = promoCode.calculateDiscount(subtotal, cart.items);
+          if (discount.discount > 0) {
+            discountAmount = discount.discount;
+            promoCodeData = {
+              code: promoCode.code,
+              discountAmount: discountAmount,
+              promoCodeId: promoCode._id
+            };
+            // Increment usage count
+            await promoCode.incrementUsage();
+          }
+        }
+      }
+    }
+
+    const totalAmount = subtotal - discountAmount;
 
     // Calculate estimated delivery date based on longest delivery time in cart
     const maxDeliveryTime = Math.max(...cart.items.map(item => item.product.deliveryTime || 14));
@@ -197,6 +239,8 @@ exports.checkout = async (req, res) => {
         price: item.product.price,
         quantity: item.quantity
       })),
+      subtotal: subtotal,
+      promoCode: promoCodeData,
       totalAmount,
       deliveryStatus: 'Processing',
       estimatedDeliveryDate: estimatedDeliveryDate,
@@ -228,6 +272,7 @@ exports.checkout = async (req, res) => {
 
     await session.commitTransaction(); session.endSession();
     req.session.cart = { items: [] }
+    delete req.session.appliedPromoCode; // Clear promo code
     req.flash('success', 'Order placed successfully!')
     res.redirect('/order-history')
   } catch (error) {
@@ -275,4 +320,66 @@ exports.orderHistory = async (req, res) => {
     res.redirect('/shop')
   }
 }
+
+// Promo Code Functions
+exports.validatePromoCode = asyncHandler(async (req, res) => {
+  const { promoCode } = req.body;
+  const cart = req.session.cart || { items: [] };
+  
+  if (!promoCode || promoCode.trim() === '') {
+    return res.json({ success: false, message: 'Please enter a promo code' });
+  }
+  
+  if (!cart.items || cart.items.length === 0) {
+    return res.json({ success: false, message: 'Your cart is empty' });
+  }
+  
+  try {
+    // Calculate cart subtotal
+    let subtotal = 0;
+    for (const item of cart.items) {
+      subtotal += item.product.price * item.quantity;
+    }
+    
+    // Find and validate promo code
+    const result = await PromoCode.findValidCode(promoCode.trim());
+    if (!result.valid) {
+      return res.json({ success: false, message: result.message });
+    }
+    
+    const discount = result.promoCode.calculateDiscount(subtotal, cart.items);
+    if (discount.discount === 0) {
+      return res.json({ success: false, message: discount.message });
+    }
+    
+    // Store promo code in session
+    req.session.appliedPromoCode = {
+      code: result.promoCode.code,
+      discountAmount: discount.discount,
+      promoCodeId: result.promoCode._id,
+      discountType: result.promoCode.discountType,
+      discountValue: result.promoCode.discountValue
+    };
+    
+    const newTotal = subtotal - discount.discount;
+    
+    res.json({
+      success: true,
+      message: 'Promo code applied successfully!',
+      discount: discount.discount,
+      subtotal: subtotal,
+      newTotal: newTotal,
+      promoCode: result.promoCode.code
+    });
+    
+  } catch (error) {
+    console.error('Promo code validation error:', error);
+    res.json({ success: false, message: 'Error validating promo code' });
+  }
+});
+
+exports.removePromoCode = (req, res) => {
+  delete req.session.appliedPromoCode;
+  res.json({ success: true, message: 'Promo code removed' });
+};
 

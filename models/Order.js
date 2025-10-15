@@ -15,6 +15,21 @@ const orderSchema = new mongoose.Schema({
     price: Number,
     quantity: Number
   }],
+  subtotal: {
+    type: Number,
+    required: true
+  },
+  promoCode: {
+    code: String,
+    discountAmount: {
+      type: Number,
+      default: 0
+    },
+    promoCodeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PromoCode'
+    }
+  },
   totalAmount: Number,
   orderDate: {
     type: Date,

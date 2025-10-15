@@ -10,7 +10,7 @@
     <% products.slice(0,4).forEach(p => { %>
       <div class="col-md-3">
         <div class="card mb-3">
-          <img src="/images/<%= p.image %>" class="card-img-top">
+          <img src="/images/<%= p.image || 'product1.svg' %>" class="card-img-top" onerror="this.src='/images/product1.svg'">
           <div class="card-body">
             <h5><%= p.name %></h5>
             <p>$<%= p.price %></p>
